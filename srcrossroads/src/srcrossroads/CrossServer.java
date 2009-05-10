@@ -13,25 +13,32 @@ public class CrossServer {
 
     private final static int listenPort = 2222;
     
-    public static void main(String args[]) throws IOException {
+    public static void main(String args[]) throws IOException, InterruptedException {
         ServerSocket serverSocket = null;
         int clientCount = 0;
+        Crossing crossing = new Crossing();
 
         //tworzenie socketa serwerowego
-        try {
-            serverSocket = new ServerSocket(listenPort);
-        } catch (IOException ex) {
-            System.err.println("Could not listen on port: "+listenPort);
-            System.exit(-1);
-        }
+        
+        serverSocket = new ServerSocket(listenPort);
+        
 
         //czekanie na podłączenie się 4 skrzyżowań
         while(clientCount<4) {
-            new CrossServerThread(serverSocket.accept(),clientCount+1).start();
+            new CrossServerThread(serverSocket.accept(),clientCount,crossing).start();
             clientCount++;
         }
         System.out.println("4 skrzyżowania podłączone!");
-        
+
+        while (true) {
+            Thread.sleep(10000);
+            System.out.println("STAN SKRZYŻOWANIA:");
+            for (int i=0;i<4;i++) {
+                System.out.println("Droga "+i+": "+crossing.getState(i));
+            }
+            System.out.println("------------------------");
+            System.out.println();
+        }
         
         
 
