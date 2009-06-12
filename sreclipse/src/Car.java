@@ -2,7 +2,7 @@ import java.awt.Color;
 import java.util.Random;
 
 public class Car {
-	public final static int length = 20;
+	public final static int length = 10;
 	public int pos;
 	public int speed;
 	public Color color;
@@ -24,6 +24,14 @@ public class Car {
 	}
 
 	public void move() {
+		
+		Random rand = new Random();
+		double factor = 0.02;
+		if (speed<2) factor = 0.2;
+		
+		if (rand.nextDouble() < factor) {
+			speed = rand.nextInt(10);
+		}
 
 		if (pos < 100 || true) {
 

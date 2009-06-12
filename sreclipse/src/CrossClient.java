@@ -19,7 +19,7 @@ public class CrossClient extends JApplet {
 			javax.swing.SwingUtilities.invokeAndWait(new Runnable() {
 				public void run() {
 					initGui();
-					// myRoad = cross.roads[0];
+					
 				}
 			});
 		} catch (Exception e) {
@@ -31,6 +31,7 @@ public class CrossClient extends JApplet {
 
 	public void initGui() {
 		getContentPane().setLayout(new java.awt.BorderLayout());
+		
 		javax.swing.JButton but = new javax.swing.JButton("Throw a car!");
 		but.setPreferredSize(new Dimension(300, 40));
 		but.setBorder(javax.swing.BorderFactory.createMatteBorder(1, 1, 1, 1,
@@ -91,8 +92,8 @@ class CrossingK extends javax.swing.JPanel {
 		roads[3].paint(g, width / 2, height / 2, width / 2);
 
 		roads[0].drawCars(g, width / 2, 0 - Car.length, height / 2);
-		roads[1].drawCars(g, 0 - Car.length, height / 2, width / 2);
-		roads[2].drawCars(g, width / 2, height, height / 2);
+		roads[1].drawCars(g, 0 - Car.length, height / 2+Car.length, width / 2);
+		roads[2].drawCars(g, width / 2+Car.length, height, height / 2);
 		roads[3].drawCars(g, width, height / 2, width / 2);
 
 	}
