@@ -1,32 +1,54 @@
 
 
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.IOException;
 import java.net.*;
+
+import javax.swing.JFrame;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
 
 
 /**
  *
  * @author paweljot
  */
-public class CrossServer {
+public class CrossServer extends JFrame {
 
     private final static int listenPort = 2222;
+    private JTextArea log;
+    private int clientCount;
+    
+    public CrossServer() throws IOException, InterruptedException {
+        initGui();
+		//poprawne wychodzenie:
+	      addWindowListener(new WindowAdapter()
+	      {
+	         public void windowClosing(WindowEvent e)
+	         {
+	           dispose();
+	           System.exit(0); //calling the method is a must
+	         }
+	      });
 
-    public static void main(String args[]) throws IOException, InterruptedException {
-
-        //ustawienie GUI
-        
         ServerSocket serverSocket = null;
-        int clientCount = 0;
+        clientCount = 0;
         Crossing cross = new Crossing();
 
         //tworzenie socketa serwerowego
 
         serverSocket = new ServerSocket(listenPort);
 
+		while (true) {
+			Socket client = serverSocket.accept();
+			log.append("Accepted from "+client.getInetAddress()+"\n");
+			CrossServerThread h = new CrossServerThread(client, cross, log);
+			h.start();
+		}
 
         //czekanie na podłączenie się 4 skrzyżowań
-        while (clientCount < 4) {
+        /*while (clientCount < 4) {
             new CrossServerThread(serverSocket.accept(), clientCount, cross).start();
             clientCount++;
         }
@@ -48,9 +70,20 @@ public class CrossServer {
             System.out.println();
             
         }
-
-
-
-
+        */        
     }
+    
+    public static void main(String args[]) throws IOException, InterruptedException {
+    	new CrossServer();
+    }
+    
+    private void initGui() {
+		setTitle("SR-Server");
+		setSize(200,600);
+		getContentPane().add(new JScrollPane(log = new JTextArea()));
+		setVisible(true);
+		log.setEditable(false);
+		log.append("Hello!\n");
+
+    }    
 }

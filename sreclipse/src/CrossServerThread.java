@@ -4,6 +4,8 @@ import java.net.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.swing.JTextArea;
+
 /**
  *
  * @author paweljot
@@ -11,15 +13,16 @@ import java.util.logging.Logger;
 public class CrossServerThread extends Thread {
 
     private Socket socket = null;
-    private int id = -1;
+    //private int id = -1; potrzebne ?
     PrintWriter out = null;
     BufferedReader in = null;
     Crossing cross = null;
+    JTextArea log;
 
-    public CrossServerThread(Socket socket, int id,Crossing cross) {
+    public CrossServerThread(Socket socket,Crossing cross, JTextArea log) {
         super();
         this.socket = socket;
-        this.id = id;
+        this.log = log;
         this.cross = cross;
 
         try {
@@ -27,7 +30,7 @@ public class CrossServerThread extends Thread {
             this.in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             this.out = new PrintWriter(socket.getOutputStream(), true);
         } catch (IOException ex) {
-            Logger.getLogger(CrossClient.class.getName()).log(Level.SEVERE, null, ex);
+            System.out.println("Błąd io wątek - "+ex.getMessage());
         }
 
 
@@ -35,29 +38,8 @@ public class CrossServerThread extends Thread {
 
     @Override
     public void run() {
-        System.out.print("Stworzono nowy wątek dla klienta " + id);
+        log.append("Stworzono nowy wątek dla klienta");
         while (true) {
-            try {
-
-                System.out.println("Wątek działa...");
-                //czekam..
-                try {
-                    Thread.sleep(5000);
-                } catch (InterruptedException ex) {
-                    Logger.getLogger(CrossServerThread.class.getName()).log(Level.SEVERE, null, ex);
-                }
-                String traffic = null;
-                while ((traffic = in.readLine()) != null) {
-
-                    System.out.println("Wątek " + id + " otrzymał ruch " + traffic);
-                    cross.updateState(id, Integer.parseInt(traffic));
-                    
-
-                }
-            } catch (IOException ex) {
-                Logger.getLogger(CrossServerThread.class.getName()).log(Level.SEVERE, null, ex);
-            } 
-
 
         }
     }

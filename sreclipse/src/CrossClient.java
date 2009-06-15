@@ -2,24 +2,39 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Random;
 
 import javax.swing.JApplet;
+import javax.swing.JButton;
 
 import com.sun.xml.internal.bind.v2.util.CollisionCheckStack;
 
 public class CrossClient extends JApplet {
 	private CrossingK cross;
 	private Road myRoad;
-
+	private final int serverPort=2222;
+	private final String serverHost = "127.0.0.1";
+	private DataOutputStream output;
+	private DataInputStream input;
+	private Socket server;
+	
 	public void init() {
 		try {
 			javax.swing.SwingUtilities.invokeAndWait(new Runnable() {
 				public void run() {
 					initGui();
-					
+					//connect();
 				}
 			});
 		} catch (Exception e) {
@@ -29,6 +44,20 @@ public class CrossClient extends JApplet {
 
 	}
 
+	public void connect() {
+		try {
+			server = new Socket(serverHost, serverPort);
+			output = new DataOutputStream(new BufferedOutputStream(server.getOutputStream()));
+			input = new DataInputStream(new BufferedInputStream(server.getInputStream()));
+		} catch (UnknownHostException e) {
+			//TODO obsluga błędów.
+			e.printStackTrace();
+		} catch (IOException e) {
+			//TODO obsluga błędów.			
+			e.printStackTrace();
+		}
+	}
+	
 	public void initGui() {
 		getContentPane().setLayout(new java.awt.BorderLayout());
 		
@@ -40,7 +69,6 @@ public class CrossClient extends JApplet {
 		getContentPane().add(but, BorderLayout.NORTH);
 		this.cross = new CrossingK();
 		getContentPane().add(cross, BorderLayout.CENTER);
-
 	}
 
 	class Thrower implements java.awt.event.ActionListener {
@@ -54,6 +82,17 @@ public class CrossClient extends JApplet {
 
 		}
 
+	}
+	
+	class Roader implements java.awt.event.ActionListener {
+		public void actionPerformed(ActionEvent e) {
+			System.out.println("clicked.");
+			if (myRoad==null) {
+				Road parent = (Road) e.getSource();
+				myRoad = parent;
+				myRoad.selected = true;
+			}
+		}
 	}
 
 }
@@ -74,6 +113,27 @@ class CrossingK extends javax.swing.JPanel {
 		// droga z prawej na lewo
 		roads[3] = new Road(Road.Orientation.HORIZONTAL, Car.Direction.LEFT);
 
+		//przyciski obslugi obsadzenia:
+		setLayout(new BorderLayout());
+		JButton button = new JButton("Take this road");
+		button.setPreferredSize(new Dimension(20,20));
+		add(button,BorderLayout.PAGE_START);
+		button = new JButton("Take this road");
+		button.setPreferredSize(new Dimension(20,20));
+		add(button,BorderLayout.SOUTH);
+		button = new JButton("Take this road");
+		button.setPreferredSize(new Dimension(20,20));
+		add(button,BorderLayout.WEST);
+		button = new JButton("Take this road");
+		button.setPreferredSize(new Dimension(20,20));
+		add(button,BorderLayout.EAST);
+/*		button = new JButton("d");
+		c.anchor=GridBagConstraints.CENTER;		
+		c.gridx=1;
+		c.gridy=1;
+		add(button,c);*/
+
+		
 		Mover mover = new Mover(this);
 		mover.start();
 	}
@@ -95,7 +155,7 @@ class CrossingK extends javax.swing.JPanel {
 		roads[1].drawCars(g, 0 - Car.length, height / 2+Car.length, width / 2);
 		roads[2].drawCars(g, width / 2+Car.length, height, height / 2);
 		roads[3].drawCars(g, width, height / 2, width / 2);
-
+		this.paintComponents(g);
 	}
 
 	class Mover extends Thread {
@@ -125,7 +185,7 @@ class CrossingK extends javax.swing.JPanel {
 class Road extends java.awt.Rectangle {
 	// position samochodu to liczba od 1 do 100.
 	private ArrayList<Car> cars;
-
+	public boolean selected=false; 
 	// orientacja drogi
 	public enum Orientation {
 		HORIZONTAL, VERTICAL
@@ -142,7 +202,10 @@ class Road extends java.awt.Rectangle {
 	}
 
 	public void paint(Graphics g, int x, int y, int length) {
-		g.setColor(new Color(255, 255, 255));
+		if (selected)
+			g.setColor(new Color(0,0,255));
+		else
+			g.setColor(new Color(255, 255, 255));
 		if (orientation == Orientation.HORIZONTAL)
 			// poziom:
 			g.fillRect(x, y - size / 2, length, size);
