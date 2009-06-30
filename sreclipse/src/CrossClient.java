@@ -5,6 +5,7 @@ import java.awt.Graphics;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
@@ -69,7 +70,8 @@ public class CrossClient extends JApplet {
 		getContentPane().add(but, BorderLayout.NORTH);
 		this.cross = new CrossingK();
 		getContentPane().add(cross, BorderLayout.CENTER);
-	}
+		this.cross.addListeners(new Roader());
+		}
 
 	class Thrower implements java.awt.event.ActionListener {
 
@@ -88,9 +90,7 @@ public class CrossClient extends JApplet {
 		public void actionPerformed(ActionEvent e) {
 			System.out.println("clicked.");
 			if (myRoad==null) {
-				Road parent = (Road) e.getSource();
-				myRoad = parent;
-				myRoad.selected = true;
+				e.getSource();
 			}
 		}
 	}
@@ -100,7 +100,8 @@ public class CrossClient extends JApplet {
 class CrossingK extends javax.swing.JPanel {
 
 	public Road roads[];
-
+	public JButton batons[];
+	
 	public CrossingK() {
 		super();
 		roads = new Road[4];
@@ -114,30 +115,31 @@ class CrossingK extends javax.swing.JPanel {
 		roads[3] = new Road(Road.Orientation.HORIZONTAL, Car.Direction.LEFT);
 
 		//przyciski obslugi obsadzenia:
+		batons = new JButton[4];
 		setLayout(new BorderLayout());
-		JButton button = new JButton("Take this road");
-		button.setPreferredSize(new Dimension(20,20));
-		add(button,BorderLayout.PAGE_START);
-		button = new JButton("Take this road");
-		button.setPreferredSize(new Dimension(20,20));
-		add(button,BorderLayout.SOUTH);
-		button = new JButton("Take this road");
-		button.setPreferredSize(new Dimension(20,20));
-		add(button,BorderLayout.WEST);
-		button = new JButton("Take this road");
-		button.setPreferredSize(new Dimension(20,20));
-		add(button,BorderLayout.EAST);
-/*		button = new JButton("d");
-		c.anchor=GridBagConstraints.CENTER;		
-		c.gridx=1;
-		c.gridy=1;
-		add(button,c);*/
-
+		batons[0] = new JButton("Take this road");
+		batons[0].setPreferredSize(new Dimension(20,20));
+		add(batons[0],BorderLayout.PAGE_START);
+		batons[1] = new JButton("Take this road");
+		batons[1].setPreferredSize(new Dimension(20,20));
+		add(batons[1],BorderLayout.SOUTH);
+		batons[2] = new JButton("Take this road");
+		batons[2].setPreferredSize(new Dimension(20,20));
+		add(batons[2],BorderLayout.WEST);
+		batons[3] = new JButton("Take this road");
+		batons[3].setPreferredSize(new Dimension(20,20));
+		add(batons[3],BorderLayout.EAST);
 		
 		Mover mover = new Mover(this);
 		mover.start();
 	}
 
+	public void addListeners(ActionListener listener) {
+		for (int i=0; i<4; i++) {
+			batons[i].addActionListener(listener);
+		}
+	}
+	
 	public void paint(Graphics g) {
 		// tlo:
 		g.setColor(new Color(255, 0, 0));
@@ -158,6 +160,15 @@ class CrossingK extends javax.swing.JPanel {
 		this.paintComponents(g);
 	}
 
+	class RoadButton extends JButton {
+		private Road connectedRoad;
+		
+		public RoadButton(Road road, String text) {
+			super(text);
+			this.connectedRoad = road;
+		}
+	}
+	
 	class Mover extends Thread {
 		private javax.swing.JPanel canvas;
 
