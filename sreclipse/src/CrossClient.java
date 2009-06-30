@@ -15,9 +15,13 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Random;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import javax.swing.JApplet;
 import javax.swing.JButton;
+
+
 
 import com.sun.xml.internal.bind.v2.util.CollisionCheckStack;
 
@@ -105,14 +109,17 @@ class CrossingK extends javax.swing.JPanel {
 	public CrossingK() {
 		super();
 		roads = new Road[4];
+		
+		
+		
 		// droga z góry na dół
-		roads[0] = new Road(Road.Orientation.VERTICAL, Car.Direction.DOWN);
+		roads[0] = new Road(Road.Orientation.VERTICAL, Car.Direction.DOWN,70,50);
 		// droga z lewej na prawo
-		roads[1] = new Road(Road.Orientation.HORIZONTAL, Car.Direction.RIGHT);
+		roads[1] = new Road(Road.Orientation.HORIZONTAL, Car.Direction.RIGHT,70,100);
 		// droga z dołu do góry
-		roads[2] = new Road(Road.Orientation.VERTICAL, Car.Direction.UP);
+		roads[2] = new Road(Road.Orientation.VERTICAL, Car.Direction.UP,120,100);
 		// droga z prawej na lewo
-		roads[3] = new Road(Road.Orientation.HORIZONTAL, Car.Direction.LEFT);
+		roads[3] = new Road(Road.Orientation.HORIZONTAL, Car.Direction.LEFT,120,50);
 
 		//przyciski obslugi obsadzenia:
 		batons = new JButton[4];
@@ -142,7 +149,7 @@ class CrossingK extends javax.swing.JPanel {
 	
 	public void paint(Graphics g) {
 		// tlo:
-		g.setColor(new Color(255, 0, 0));
+		g.setColor(new Color(195, 195, 195));
 		g.fillRect(0, 0, this.getWidth(), this.getHeight());
 		g.setColor(new Color(255, 255, 255));
 		// drogi:
@@ -157,6 +164,13 @@ class CrossingK extends javax.swing.JPanel {
 		roads[1].drawCars(g, 0 - Car.length, height / 2+Car.length, width / 2);
 		roads[2].drawCars(g, width / 2+Car.length, height, height / 2);
 		roads[3].drawCars(g, width, height / 2, width / 2);
+		
+		roads[0].drawSignalization(g);
+		roads[1].drawSignalization(g);
+		roads[2].drawSignalization(g);
+		roads[3].drawSignalization(g);
+		
+		
 		this.paintComponents(g);
 	}
 
@@ -177,6 +191,13 @@ class CrossingK extends javax.swing.JPanel {
 		}
 
 		public void run() {
+			
+			//ustawienie timera, żeby zmieniał światła
+		    Timer timer = new Timer();
+		    lightControl lc = new lightControl(roads);
+		    timer.scheduleAtFixedRate(lc, 0, 7000);
+		       
+			
 			while (true) {
 				roads[0].moveCars();
 				roads[1].moveCars();
@@ -188,6 +209,30 @@ class CrossingK extends javax.swing.JPanel {
 				} catch (InterruptedException e) {
 					System.out.println("Mover Exception" + e.getMessage());
 				}
+			}
+		}
+		
+		
+		//klasa wywoływana przez timer do zmieniania świateł co określony czas
+		class lightControl extends TimerTask {
+			private Road roads[];
+			private int counter = 0;
+			lightControl(Road roads[]) {
+				super();
+				this.roads = roads;
+			}
+			public void run() {
+
+				
+				for (int i = 0; i<4; i++) {
+					if (i==counter || i== (counter+2)%4) {
+						roads[i].light = Road.LightColor.GREEN;
+					} else {
+						roads[i].light = Road.LightColor.RED;
+					}
+				}
+				counter++;
+				counter = counter%4;
 			}
 		}
 	}
@@ -204,12 +249,25 @@ class Road extends java.awt.Rectangle {
 
 	public Orientation orientation;
 	public Car.Direction startDirection;
+	
+	//kolory świateł
+	public enum LightColor {
+		RED,ORANGE,GREEN
+	};
+	public LightColor light = LightColor.RED;
+	private int lightPosX;
+	private int lightPosY;
+	
+	
 	private final int size = 30;
 
-	public Road(Orientation orientation, Car.Direction startDirection) {
+	public Road(Orientation orientation, Car.Direction startDirection, int lightX, int lightY) {
 		cars = new ArrayList<Car>();
 		this.orientation = orientation;
 		this.startDirection = startDirection;
+		
+		this.lightPosX = lightX;
+		this.lightPosY = lightY;
 	}
 
 	public void paint(Graphics g, int x, int y, int length) {
@@ -223,7 +281,20 @@ class Road extends java.awt.Rectangle {
 		else
 			// pion:
 			g.fillRect(x - size / 2, y, size, length);
-		// this.drawCars(g, x,y,length);
+		
+	}
+	
+	public void drawSignalization(Graphics g) {
+		if (this.light == LightColor.RED) 
+			g.setColor(new Color(255,0,0));
+		else if (this.light == LightColor.GREEN) {
+			g.setColor(new Color(0,255,0));
+		} else if (this.light == LightColor.ORANGE) {
+			g.setColor(new Color(255,255,0));
+		}
+		
+		g.fillOval(lightPosX, lightPosY, 10, 10);
+		
 	}
 
 	public void drawCars(Graphics g, int x, int y, int length) {
@@ -262,9 +333,22 @@ class Road extends java.awt.Rectangle {
 		java.util.Iterator<Car> i = cars.iterator();
 
 		checkCollisions();
+		
+		
 
 		while (i.hasNext()) {
-			i.next().move();
+			Car tmp = i.next();
+
+			if (Math.abs(tmp.pos) >= 80 && Math.abs(tmp.pos) < 90 && this.light==LightColor.RED) {
+				tmp.speed = 0;
+				if (tmp.pos<0) tmp.pos=-80; else tmp.pos=80;
+			} else if (tmp.speed == 0 && this.light==LightColor.GREEN) {
+				tmp.speed = 1;
+			}
+
+
+			tmp.move();
+			
 		}
 	}
 
@@ -314,6 +398,10 @@ class Road extends java.awt.Rectangle {
 			// i następnego po nim
 			cur = i.next();
 
+
+			
+			
+			
 			switch (cur.direction) {
 			case UP:
 				if (cur.pos - cur.speed < prev.pos+Car.length) {
@@ -342,11 +430,14 @@ class Road extends java.awt.Rectangle {
 				break;
 
 			}
+			
 
 			prev = cur;
 		} while (i.hasNext());
 
 		return;
 	}
+	
+	
 
 }

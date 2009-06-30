@@ -25,14 +25,17 @@ public class Car {
 
 	public void move() {
 		
-		Random rand = new Random();
-		double factor = 0.02;
-		if (speed<2) factor = 0.2;
-		
-		if (rand.nextDouble() < factor) {
-			speed = rand.nextInt(10);
-		}
+		if (speed != 0) {
+			Random rand = new Random();
+			double factor = 0.02;
+			if (speed<2) factor = 0.2;
+			
+			if (rand.nextDouble() < factor) {
+				speed = rand.nextInt(10)+1;
+			}
 
+		}
+		
 		if (pos < 100 || true) {
 
 			switch (direction) {
