@@ -1,8 +1,6 @@
 
 import java.io.*;
 import java.net.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import javax.swing.JTextArea;
 
@@ -14,10 +12,17 @@ public class CrossServerThread extends Thread {
 
     private Socket socket = null;
     //private int id = -1; potrzebne ?
-    PrintWriter out = null;
-    BufferedReader in = null;
+    DataOutputStream out = null;
+    DataInputStream in = null;
     Crossing cross = null;
     JTextArea log;
+    
+	//tokeny dla komunikatów:
+	//TODO - w jakiejs wspolne klaise / pliku konfiguracyjnym
+	public final char T_OCCUPY = 0x11;
+	public final char T_SHELO = 0x01;
+	public final char T_OKOCC = 0x21;
+	public final char T_FLDOCC = 0x22;	
 
     public CrossServerThread(Socket socket,Crossing cross, JTextArea log) {
         super();
@@ -27,8 +32,9 @@ public class CrossServerThread extends Thread {
 
         try {
             //strumień wejściowy - od serwera
-            this.in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            this.out = new PrintWriter(socket.getOutputStream(), true);
+    		out = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
+    		in = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
+
         } catch (IOException ex) {
             System.out.println("Błąd io wątek - "+ex.getMessage());
         }
@@ -39,8 +45,27 @@ public class CrossServerThread extends Thread {
     @Override
     public void run() {
         log.append("Stworzono nowy wątek dla klienta");
-        while (true) {
+		try {
+			out.writeUTF(new String(Character.toString(T_SHELO)));
+			out.flush();
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 
+        while (true) {
+        	try {
+				String msg = in.readUTF();
+				char token = msg.charAt(0);
+				switch (token) {
+					case T_OCCUPY:
+						out.writeUTF(new String(Character.toString(T_OKOCC)));
+						out.flush();
+						log.append("Klient zajął drogę " +msg.substring(1)+"\n");						
+				}
+			} catch (IOException e) {
+				// TODO odlaczenie klienta, zabicie watku.
+			}
         }
     }
 }

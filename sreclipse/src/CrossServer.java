@@ -1,9 +1,8 @@
-
-
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
 import java.net.*;
+import java.util.ArrayList;
 
 import javax.swing.JFrame;
 import javax.swing.JScrollPane;
@@ -20,6 +19,8 @@ public class CrossServer extends JFrame {
     private JTextArea log;
     private int clientCount;
     
+    private ArrayList<CrossServerThread> clients;
+    
     public CrossServer() throws IOException, InterruptedException {
         initGui();
 		//poprawne wychodzenie:
@@ -31,9 +32,10 @@ public class CrossServer extends JFrame {
 	           System.exit(0); //calling the method is a must
 	         }
 	      });
-
+	      
         ServerSocket serverSocket = null;
         clientCount = 0;
+        clients = new ArrayList<CrossServerThread>();
         Crossing cross = new Crossing();
 
         //tworzenie socketa serwerowego
@@ -44,6 +46,7 @@ public class CrossServer extends JFrame {
 			Socket client = serverSocket.accept();
 			log.append("Accepted from "+client.getInetAddress()+"\n");
 			CrossServerThread h = new CrossServerThread(client, cross, log);
+			clients.add(h);
 			h.start();
 		}
 

@@ -1,24 +1,21 @@
-
+ 
 /**
  *
  * @author paweljot
  */
 public class Crossing {
 
-    private int[] roads = new int[4];
+    private Road[] roads = new Road[4];
 
     public Crossing() {
-        for (int i=0;i<roads.length;i++) {
-            roads[i]=0;
-        }
-    }
-
-    public synchronized void updateState(int roadNum,int newTraffic) {
-        roads[roadNum] += newTraffic;
-    }
-
-    public int getState(int roadNum) {
-        return roads[roadNum];
+		// droga z góry na dół
+		roads[0] = new Road(Road.Orientation.VERTICAL, Car.Direction.DOWN,70,50,0);
+		// droga z lewej na prawo
+		roads[1] = new Road(Road.Orientation.HORIZONTAL, Car.Direction.RIGHT,70,100,1);
+		// droga z dołu do góry
+		roads[2] = new Road(Road.Orientation.VERTICAL, Car.Direction.UP,120,100,2);
+		// droga z prawej na lewo
+		roads[3] = new Road(Road.Orientation.HORIZONTAL, Car.Direction.LEFT,120,50,3);
     }
 
 }

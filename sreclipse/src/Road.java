@@ -4,42 +4,47 @@ import java.awt.Rectangle;
 import java.util.ArrayList;
 
 class Road extends java.awt.Rectangle {
-	// position samochodu to liczba od 1 do 100.
-	private ArrayList<Car> cars;
-	public boolean selected=false; 
 	// orientacja drogi
 	public enum Orientation {
 		HORIZONTAL, VERTICAL
 	};
-
-	public Orientation orientation;
-	public Car.Direction startDirection;
-	
 	//kolory świateł
 	public enum LightColor {
 		RED,ORANGE,GREEN
 	};
+	//zajetosc :)
+	public enum Occupation {
+		OCCUPIED, FREE;
+	}
+	
+
+	// position samochodu to liczba od 1 do 100.
+	private ArrayList<Car> cars;
+
+	public Orientation orientation;
+	public Car.Direction startDirection;
+	public Occupation occupation;
+	
 	public LightColor light = LightColor.RED;
 	private int lightPosX;
 	private int lightPosY;
-	
-	
+	public int roadNumber;
 	private final int size = 30;
+	
 
-	public Road(Orientation orientation, Car.Direction startDirection, int lightX, int lightY) {
+	//TODO konstruktor dla drogi bez tych orientacji itd - to co potrzebuje serwer.
+	public Road(Orientation orientation, Car.Direction startDirection, int lightX, int lightY, int number) {
 		cars = new ArrayList<Car>();
 		this.orientation = orientation;
 		this.startDirection = startDirection;
-		
+		this.roadNumber = number;
 		this.lightPosX = lightX;
 		this.lightPosY = lightY;
+		this.occupation = Occupation.FREE;
 	}
 
 	public void paint(Graphics g, int x, int y, int length) {
-		if (selected)
-			g.setColor(new Color(0,0,255));
-		else
-			g.setColor(new Color(255, 255, 255));
+		g.setColor(new Color(255, 255, 255));
 		if (orientation == Orientation.HORIZONTAL)
 			// poziom:
 			g.fillRect(x, y - size / 2, length, size);

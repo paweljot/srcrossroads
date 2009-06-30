@@ -23,8 +23,6 @@ import javax.swing.JButton;
 
 
 
-import com.sun.xml.internal.bind.v2.util.CollisionCheckStack;
-
 public class CrossClient extends JApplet {
 	private CrossingK cross;
 	private Road myRoad;
@@ -33,13 +31,26 @@ public class CrossClient extends JApplet {
 	private DataOutputStream output;
 	private DataInputStream input;
 	private Socket server;
+	private Connection conn;
+	private Roader buttonListener; 
+	
+	//tokeny dla komunikatów:
+	
+	public final char T_OCCUPY = 0x11;
+	public final char T_SHELO = 0x01;
+	public final char T_OKOCC = 0x21;
+	public final char T_FLDOCC = 0x22;
+	
+	//token dla okupacji drogi
+	
+	private boolean occupyResponse;
 	
 	public void init() {
 		try {
 			javax.swing.SwingUtilities.invokeAndWait(new Runnable() {
 				public void run() {
 					initGui();
-					//connect();
+					connect();
 				}
 			});
 		} catch (Exception e) {
@@ -54,6 +65,8 @@ public class CrossClient extends JApplet {
 			server = new Socket(serverHost, serverPort);
 			output = new DataOutputStream(new BufferedOutputStream(server.getOutputStream()));
 			input = new DataInputStream(new BufferedInputStream(server.getInputStream()));
+			conn = new Connection();
+			conn.start();
 		} catch (UnknownHostException e) {
 			//TODO obsluga błędów.
 			e.printStackTrace();
@@ -74,31 +87,104 @@ public class CrossClient extends JApplet {
 		getContentPane().add(but, BorderLayout.NORTH);
 		this.cross = new CrossingK();
 		getContentPane().add(cross, BorderLayout.CENTER);
-		this.cross.addListeners(new Roader());
+		buttonListener = new Roader();
+		this.cross.addListeners(buttonListener);
 		}
 
+	public synchronized boolean occupyRoad(int number) {
+		//poinformuj serwer:
+		String msg = Character.toString(T_OCCUPY);
+		msg+=Integer.toString(number);
+		conn.sendMessage(msg);
+		try {
+			wait();
+		} catch (InterruptedException e1) {
+			//TODO lost communication with server
+		}
+		return occupyResponse;
+	}
+	
 	class Thrower implements java.awt.event.ActionListener {
 
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			Random rand = new Random();
-			myRoad = cross.roads[rand.nextInt(4)];
-
-			myRoad.newCar(rand.nextInt(10) + 1);
+			//myRoad = cross.roads[rand.nextInt(4)];
+			if (myRoad!=null)
+				myRoad.newCar(rand.nextInt(10) + 1);
 
 		}
 
 	}
 	
 	class Roader implements java.awt.event.ActionListener {
-		public void actionPerformed(ActionEvent e) {
-			System.out.println("clicked.");
+		public synchronized void actionPerformed(ActionEvent e) {
+			//System.out.println(((RoadButton)e.getSource()).getBackground());
 			if (myRoad==null) {
-				e.getSource();
+				Road selectedRoad = ((RoadButton)e.getSource()).connectedRoad;
+				//poinformuj serwer:
+				String msg = Character.toString(T_OCCUPY);
+				msg+=Integer.toString(selectedRoad.roadNumber);
+				conn.sendMessage(msg);
+				try {
+					wait();
+				} catch (InterruptedException e1) {
+					//TODO lost communication with server
+				}
+				
+				if (occupyResponse) {
+					((RoadButton)e.getSource()).setBackground(new Color(0,255,0));
+					myRoad = selectedRoad;
+				}
+				
+//				occupyRoad(selectedRoad.roadNumber);
+//				if (((RoadButton)e.getSource()).setBackground(new Color(0,255,0));				
+			}
+/*			else if (myRoad == ((RoadButton)e.getSource()).connectedRoad) {
+				myRoad=null;
+				((RoadButton)e.getSource()).setBackground(new Color(238,238,238));				
+			}
+			*/
+		}
+	
+	}
+	class Connection extends Thread {
+		private JApplet aplet;
+		public void sendMessage(String msg) {
+			try {
+				output.writeUTF(msg);
+				output.flush();
+			}
+			catch (IOException e) {
+				//TODO poinformowanie o takowym fakcie klienta i zamkniecie aplikacji.
+			}
+		}	
+		public void run() {
+			try {
+				while(true) {
+					String msg = input.readUTF();
+					synchronized (buttonListener) {
+						char token = msg.charAt(0);
+						//System.out.println("czytam msg.");
+						switch(token) {
+						case T_OKOCC:
+							occupyResponse = true;
+							buttonListener.notify();
+							break;
+						case T_FLDOCC:
+							occupyResponse = false;
+							buttonListener.notify();
+							break;
+						}
+					}
+				}
+			} catch (IOException e) {
+				//TODO
+			} finally {
+				//TODO
 			}
 		}
 	}
-
 }
 
 class CrossingK extends javax.swing.JPanel {
@@ -110,30 +196,28 @@ class CrossingK extends javax.swing.JPanel {
 		super();
 		roads = new Road[4];
 		
-		
-		
 		// droga z góry na dół
-		roads[0] = new Road(Road.Orientation.VERTICAL, Car.Direction.DOWN,70,50);
+		roads[0] = new Road(Road.Orientation.VERTICAL, Car.Direction.DOWN,70,50,0);
 		// droga z lewej na prawo
-		roads[1] = new Road(Road.Orientation.HORIZONTAL, Car.Direction.RIGHT,70,100);
+		roads[1] = new Road(Road.Orientation.HORIZONTAL, Car.Direction.RIGHT,70,100,1);
 		// droga z dołu do góry
-		roads[2] = new Road(Road.Orientation.VERTICAL, Car.Direction.UP,120,100);
+		roads[2] = new Road(Road.Orientation.VERTICAL, Car.Direction.UP,120,100,2);
 		// droga z prawej na lewo
-		roads[3] = new Road(Road.Orientation.HORIZONTAL, Car.Direction.LEFT,120,50);
+		roads[3] = new Road(Road.Orientation.HORIZONTAL, Car.Direction.LEFT,120,50,3);
 
 		//przyciski obslugi obsadzenia:
 		batons = new JButton[4];
 		setLayout(new BorderLayout());
-		batons[0] = new JButton("Take this road");
+		batons[0] = new RoadButton(roads[0], "Take this road");
 		batons[0].setPreferredSize(new Dimension(20,20));
 		add(batons[0],BorderLayout.PAGE_START);
-		batons[1] = new JButton("Take this road");
+		batons[1] = new RoadButton(roads[1], "Take this road");
 		batons[1].setPreferredSize(new Dimension(20,20));
-		add(batons[1],BorderLayout.SOUTH);
-		batons[2] = new JButton("Take this road");
+		add(batons[1],BorderLayout.WEST);
+		batons[2] = new RoadButton(roads[2], "Take this road");
 		batons[2].setPreferredSize(new Dimension(20,20));
-		add(batons[2],BorderLayout.WEST);
-		batons[3] = new JButton("Take this road");
+		add(batons[2],BorderLayout.SOUTH);
+		batons[3] = new RoadButton(roads[3], "Take this road");
 		batons[3].setPreferredSize(new Dimension(20,20));
 		add(batons[3],BorderLayout.EAST);
 		
@@ -174,15 +258,6 @@ class CrossingK extends javax.swing.JPanel {
 		this.paintComponents(g);
 	}
 
-	class RoadButton extends JButton {
-		private Road connectedRoad;
-		
-		public RoadButton(Road road, String text) {
-			super(text);
-			this.connectedRoad = road;
-		}
-	}
-	
 	class Mover extends Thread {
 		private javax.swing.JPanel canvas;
 
@@ -238,206 +313,12 @@ class CrossingK extends javax.swing.JPanel {
 	}
 }
 
-class Road extends java.awt.Rectangle {
-	// position samochodu to liczba od 1 do 100.
-	private ArrayList<Car> cars;
-	public boolean selected=false; 
-	// orientacja drogi
-	public enum Orientation {
-		HORIZONTAL, VERTICAL
-	};
-
-	public Orientation orientation;
-	public Car.Direction startDirection;
+class RoadButton extends JButton {
+	public Road connectedRoad;
 	
-	//kolory świateł
-	public enum LightColor {
-		RED,ORANGE,GREEN
-	};
-	public LightColor light = LightColor.RED;
-	private int lightPosX;
-	private int lightPosY;
-	
-	
-	private final int size = 30;
-
-	public Road(Orientation orientation, Car.Direction startDirection, int lightX, int lightY) {
-		cars = new ArrayList<Car>();
-		this.orientation = orientation;
-		this.startDirection = startDirection;
-		
-		this.lightPosX = lightX;
-		this.lightPosY = lightY;
+	public RoadButton(Road road, String text) {
+		super(text);
+		this.connectedRoad = road;
 	}
-
-	public void paint(Graphics g, int x, int y, int length) {
-		if (selected)
-			g.setColor(new Color(0,0,255));
-		else
-			g.setColor(new Color(255, 255, 255));
-		if (orientation == Orientation.HORIZONTAL)
-			// poziom:
-			g.fillRect(x, y - size / 2, length, size);
-		else
-			// pion:
-			g.fillRect(x - size / 2, y, size, length);
-		
-	}
-	
-	public void drawSignalization(Graphics g) {
-		if (this.light == LightColor.RED) 
-			g.setColor(new Color(255,0,0));
-		else if (this.light == LightColor.GREEN) {
-			g.setColor(new Color(0,255,0));
-		} else if (this.light == LightColor.ORANGE) {
-			g.setColor(new Color(255,255,0));
-		}
-		
-		g.fillOval(lightPosX, lightPosY, 10, 10);
-		
-	}
-
-	public void drawCars(Graphics g, int x, int y, int length) {
-		java.util.Iterator<Car> i = cars.iterator();
-		while (i.hasNext()) {
-
-			Car car = i.next();
-
-			g.setColor(car.color);
-			if (this.orientation == Orientation.HORIZONTAL) {
-
-				int carX = x + car.pos * length / 100;
-				g.fillRect(carX, y - 10, Car.length, Car.length);
-
-				// wyrzucamy samochody, które są poza planszą
-				if (carX > length * 2 || carX < 0 - Car.length * 2)
-					i.remove();
-
-			} else {
-
-				int carY = y + car.pos * length / 100;
-				g.fillRect(x - 10, carY, Car.length, Car.length);
-
-				// wyrzucamy samochody, które są poza planszą
-				if (carY - Car.length > length * 2 || carY < 0 - Car.length * 2)
-					i.remove();
-			}
-		}
-	}
-
-	public void newCar(int speed) {
-		cars.add(new Car(speed, startDirection));
-	}
-
-	public void moveCars() {
-		java.util.Iterator<Car> i = cars.iterator();
-
-		checkCollisions();
-		
-		
-
-		while (i.hasNext()) {
-			Car tmp = i.next();
-
-			if (Math.abs(tmp.pos) >= 80 && Math.abs(tmp.pos) < 90 && this.light==LightColor.RED) {
-				tmp.speed = 0;
-				if (tmp.pos<0) tmp.pos=-80; else tmp.pos=80;
-			} else if (tmp.speed == 0 && this.light==LightColor.GREEN) {
-				tmp.speed = 1;
-			}
-
-
-			tmp.move();
-			
-		}
-	}
-
-	public void checkCollisions() {
-		java.util.Iterator<Car> i = cars.iterator();
-		ArrayList<Car> carsUp = new ArrayList<Car>();
-		ArrayList<Car> carsDown = new ArrayList<Car>();
-		ArrayList<Car> carsLeft = new ArrayList<Car>();
-		ArrayList<Car> carsRight = new ArrayList<Car>();
-
-		Car car;
-
-		while (i.hasNext()) {
-			car = i.next();
-			switch (car.direction) {
-			case UP:
-				carsUp.add(car);
-			case DOWN:
-				carsDown.add(car);
-			case LEFT:
-				carsLeft.add(car);
-			case RIGHT:
-				carsRight.add(car);
-			}
-		}
-
-		 collisions(carsUp);
-		 collisions(carsDown);
-		 collisions(carsLeft);
-		 collisions(carsRight);
-
-	}
-
-	private void collisions(ArrayList<Car> cars) {
-		java.util.ListIterator<Car> i = cars.listIterator();
-
-		if (!i.hasNext())
-			return;
-
-		Car cur;
-		Car prev = i.next();
-
-		do {
-			// pobranie samochodu który wjechał na skrzyżowanie
-			if (!i.hasNext())
-				return;
-			// i następnego po nim
-			cur = i.next();
-
-
-			
-			
-			
-			switch (cur.direction) {
-			case UP:
-				if (cur.pos - cur.speed < prev.pos+Car.length) {
-					cur.pos = prev.pos+Car.length;
-					cur.speed = prev.speed;
-				}
-				break;
-			case DOWN:
-				if (cur.pos + cur.speed > prev.pos-Car.length) {
-					cur.pos = prev.pos-Car.length;
-					cur.speed = prev.speed;
-				}
-				break;
-			case LEFT:
-				
-				if (cur.pos - cur.speed < prev.pos+Car.length) {
-					cur.pos = prev.pos+Car.length;
-					cur.speed = prev.speed;
-				}
-				break;
-			case RIGHT:
-				if (cur.pos + cur.speed > prev.pos - Car.length) {
-					cur.pos = prev.pos - Car.length;
-					cur.speed = prev.speed;
-				}
-				break;
-
-			}
-			
-
-			prev = cur;
-		} while (i.hasNext());
-
-		return;
-	}
-	
-	
-
 }
+
