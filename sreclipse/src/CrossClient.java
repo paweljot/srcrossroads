@@ -41,6 +41,7 @@ public class CrossClient extends JApplet {
 	public final char T_FLDOCC = 0x22;	
 	public final char T_NEWCAR = 0x23;	
 	public final char T_LIGHTCH = 0x12;
+	public final char T_UNOCC = 0x99;
 	
 	//token dla okupacji drogi
 	
@@ -130,7 +131,6 @@ public class CrossClient extends JApplet {
 	
 	class Roader implements java.awt.event.ActionListener {
 		public synchronized void actionPerformed(ActionEvent e) {
-			//System.out.println(((RoadButton)e.getSource()).getBackground());
 			Road selectedRoad = ((RoadButton)e.getSource()).connectedRoad;
 			if (myRoad==null && selectedRoad.occupation==Road.Occupation.FREE) {
 				//poinformuj serwer:
@@ -148,11 +148,6 @@ public class CrossClient extends JApplet {
 					myRoad = selectedRoad;
 				}
 			}
-/*			else if (myRoad == ((RoadButton)e.getSource()).connectedRoad) {
-				myRoad=null;
-				((RoadButton)e.getSource()).setBackground(new Color(238,238,238));				
-			}
-			*/
 		}
 	
 	}
@@ -189,6 +184,10 @@ public class CrossClient extends JApplet {
 						case T_OCCUPY:
 							int roadNumber = Integer.parseInt(msg.substring(1));
 							cross.roadOccupied(roadNumber);
+							break;
+						case T_UNOCC:
+							int number = Integer.parseInt(msg.substring(1));
+							cross.roadReleased(number);							
 							break;
 						case T_NEWCAR:
 							String tmpmsg[] = msg.split(",");
@@ -267,18 +266,16 @@ class CrossingK extends javax.swing.JPanel {
 		
 		Mover mover = new Mover(this);
 		mover.start();
-		
-		//ustawienie timera, żeby zmieniał światła
-/*	    Timer timer = new Timer();
-	    lightControl lc = new lightControl(roads);
-	    timer.scheduleAtFixedRate(lc, 0, 7000);
-	   */
 	}
 
 	public void addListeners(ActionListener listener) {
 		for (int i=0; i<4; i++) {
 			batons[i].addActionListener(listener);
 		}
+	}
+	public void roadReleased(int number) {
+		roads[number].occupation=Road.Occupation.FREE;
+		batons[number].setBackground(new Color(255,255,255));
 	}
 	/**
 	 *  SLuzy do oznaczenia drogi jako zjaeta - jesli dostaniemyu taka informacje od serwera.

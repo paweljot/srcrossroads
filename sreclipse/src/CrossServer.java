@@ -18,7 +18,7 @@ public class CrossServer extends JFrame {
 
     private final static int listenPort = 2222;
     public JTextArea log;
-    private int clientCount;
+    private Crossing cross;
     
     private ArrayList<CrossServerThread> clients;
     
@@ -35,9 +35,8 @@ public class CrossServer extends JFrame {
 	      });
 	      
         ServerSocket serverSocket = null;
-        clientCount = 0;
         clients = new ArrayList<CrossServerThread>();
-        Crossing cross = new Crossing(this);
+        cross = new Crossing(this);
 
         //tworzenie socketa serwerowego
 
@@ -67,6 +66,17 @@ public class CrossServer extends JFrame {
     		if (!watek.equals(notThis))
     			watek.sendMessage(msg);    			
     	}    	
+    }
+    
+    public void killClient(CrossServerThread toKill) {
+    	log.append("Klient odłączony.\n");
+    	int roadNumber = cross.freeRoad(toKill);
+    	clients.remove(toKill);
+    	if (roadNumber!=-1) {
+    		String msg = Character.toString(CrossServerThread.T_UNOCC);
+    		msg+=Integer.toString(roadNumber);
+    		broadcast(msg);
+    	}
     }
     
     public static void main(String args[]) throws IOException, InterruptedException {

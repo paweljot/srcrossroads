@@ -11,7 +11,7 @@ import javax.swing.JTextArea;
 public class CrossServerThread extends Thread {
 
     private Socket socket = null;
-    //private int id = -1; potrzebne ?
+    private boolean stop=false;
     DataOutputStream out = null;
     DataInputStream in = null;
     Crossing cross = null;
@@ -26,6 +26,7 @@ public class CrossServerThread extends Thread {
 	public final static char T_FLDOCC = 0x22;	
 	public final static char T_NEWCAR = 0x23;
 	public final static char T_LIGHTCH = 0x12;
+	public final static char T_UNOCC = 0x99;
 	
 
     public CrossServerThread(CrossServer server,Socket socket,Crossing cross, JTextArea log) {
@@ -52,7 +53,7 @@ public class CrossServerThread extends Thread {
 			out.writeUTF(msg);
 			out.flush(); 
 		} catch (IOException e) {
-			// TODO zamkniecie klienta dla serwera.
+			server.killClient(this);
 		}   	
     }
 
@@ -65,7 +66,7 @@ public class CrossServerThread extends Thread {
         //wysylam tez informacje o nastepnej zmianie swiatla:
         sendMessage(cross.getNextLightChangeMsg());
         log.append("Wysłano hello: "+hello+"\n");        
-        while (true) {
+        while (!stop) {
         	try {
 				String msg = in.readUTF();
 				char token = msg.charAt(0);
@@ -99,7 +100,8 @@ public class CrossServerThread extends Thread {
 
 				}
 			} catch (IOException e) {
-				// TODO odlaczenie klienta, zabicie watku.
+				server.killClient(this);
+				this.stop = true;
 			}
         }
     }

@@ -43,6 +43,21 @@ public class Crossing {
     	}
     	return false;
     }
+    /**
+     * czysci droge, jesli watek jakas posiadal
+     * @param watek - watek ktory jest podejrzany o posiadanie drogi
+     * @return int -1 - jesli nie zwolnila sie droga, inaczej numer drogi;
+     */
+    public int freeRoad(CrossServerThread watek) {
+    	for (int i=0;i<4;i++) {
+    		if (clients[i]!= null && clients[i].equals(watek)) {
+        		roads[i].occupation=Road.Occupation.FREE;
+            	clients[i] = null;
+            	return i;
+    		}
+    	}
+    	return -1;
+    }
     
     public String getHello() {
     	String msg = new String();
@@ -70,7 +85,7 @@ public class Crossing {
 	 * Sluzy do zmiany swiatel.
 	 */
 	public void lightChange() {
-		owner.log.append("zmiana Swiatel");
+		owner.log.append("zmiana Swiatel\n");
 		for (int i=0;i<4;i++) {
 			if (roads[i].light==Road.LightColor.GREEN)
 				roads[i].light=Road.LightColor.RED;
