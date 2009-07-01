@@ -2,8 +2,6 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.BufferedInputStream;
@@ -14,6 +12,7 @@ import java.io.IOException;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -41,6 +40,7 @@ public class CrossClient extends JApplet {
 	public final char T_OKOCC = 0x21;
 	public final char T_FLDOCC = 0x22;	
 	public final char T_NEWCAR = 0x23;	
+	public final char T_LIGHTCH = 0x12;
 	
 	//token dla okupacji drogi
 	
@@ -172,8 +172,12 @@ public class CrossClient extends JApplet {
 					String msg = input.readUTF();
 					synchronized (buttonListener) {
 						char token = msg.charAt(0);
-						//System.out.println("czytam msg.");
+
 						switch(token) {
+						case T_SHELO:
+							String args[] = (msg.substring(1)).split(",");
+							cross.setUp(args);
+							break;
 						case T_OKOCC:
 							occupyResponse = true;
 							buttonListener.notify();
@@ -193,6 +197,17 @@ public class CrossClient extends JApplet {
 							int carspeed = Integer.parseInt(tmpmsg[2]);
 							cross.roads[roadNumber].newCar(carspeed);
 							break;
+						case T_LIGHTCH:
+							long when = Long.parseLong(msg.substring(1));
+							if (when < System.currentTimeMillis())
+								//jezeli sie spoznilem to wykonuje to natychmiast!
+								//TODO jakas informacja o duzym latency !
+								cross.lightChange();
+							else {
+								Timer timer = new Timer();
+								timer.schedule(new lightChange(), new Date(when));
+							}
+							break;
 						}
 					}
 				}
@@ -203,6 +218,17 @@ public class CrossClient extends JApplet {
 			}
 		}
 	}
+	/**
+	 * klasa do zmiany swiatla
+	 * @author ojciec
+	 *
+	 */
+    class lightChange extends TimerTask {
+		public void run() {
+			cross.lightChange();
+		}
+	}    
+
 }
 
 class CrossingK extends javax.swing.JPanel {
@@ -243,10 +269,10 @@ class CrossingK extends javax.swing.JPanel {
 		mover.start();
 		
 		//ustawienie timera, żeby zmieniał światła
-	    Timer timer = new Timer();
+/*	    Timer timer = new Timer();
 	    lightControl lc = new lightControl(roads);
 	    timer.scheduleAtFixedRate(lc, 0, 7000);
-	   
+	   */
 	}
 
 	public void addListeners(ActionListener listener) {
@@ -255,12 +281,51 @@ class CrossingK extends javax.swing.JPanel {
 		}
 	}
 	/**
-	 *  SLuzy do oznaczenia drogi jako zjaeta -0 jesli dostaniemyu taka informacje od serwera.
+	 *  SLuzy do oznaczenia drogi jako zjaeta - jesli dostaniemyu taka informacje od serwera.
 	 * @param number
 	 */
 	public void roadOccupied(int number) {
 		roads[number].occupation = Road.Occupation.OCCUPIED;
 		batons[number].setBackground(new Color(255,0,0));
+	}
+	/**
+	 * Sluzy do zmiany swiatel.
+	 */
+	public void lightChange() {
+		for (int i=0;i<4;i++) {
+			if (roads[i].light==Road.LightColor.GREEN)
+				roads[i].light=Road.LightColor.RED;
+			else
+				roads[i].light=Road.LightColor.GREEN;
+		}
+	}
+	/**
+	 * Sluzy do ustawienia skrzyzowanie po podlaczeniu do serwera
+	 */
+	
+	public void setUp(String[] args) {
+		int counter=0;
+		for (int i=0;i<args.length;i++) {
+			if (args[i].length()==2) {
+				//poprawny argument:
+				if (args[i].substring(0, 1).equals("1")) {
+					//zajęta droga:
+					roads[counter].occupation=Road.Occupation.OCCUPIED;
+					//button na czerwono:
+					batons[counter].setBackground(new Color(255,0,0));
+				}
+				
+				if (args[i].substring(1,2).equals("0")) {
+					//czerwone:
+					roads[counter].light = Road.LightColor.RED;
+				}
+				else 
+					//zielone
+					roads[counter].light = Road.LightColor.GREEN;
+				
+				counter++;
+			}
+		}
 	}
 	
 	public void paint(Graphics g) {
@@ -298,10 +363,6 @@ class CrossingK extends javax.swing.JPanel {
 		}
 
 		public void run() {
-			
-			
-		     
-			
 			while (true) {
 				roads[0].moveCars();
 				roads[1].moveCars();
@@ -316,31 +377,6 @@ class CrossingK extends javax.swing.JPanel {
 			}
 		}
 		
-		
-		//klasa wywoływana przez timer do zmieniania świateł co określony czas
-		
-	}
-	
-	class lightControl extends TimerTask {
-		private Road roads[];
-		private int counter = 0;
-		lightControl(Road roads[]) {
-			super();
-			this.roads = roads;
-		}
-		public void run() {
-
-			
-			for (int i = 0; i<4; i++) {
-				if (i==counter || i== (counter+2)%4) {
-					roads[i].light = Road.LightColor.GREEN;
-				} else {
-					roads[i].light = Road.LightColor.RED;
-				}
-			}
-			counter++;
-			counter = counter%4;
-		}
 	}
 }
 

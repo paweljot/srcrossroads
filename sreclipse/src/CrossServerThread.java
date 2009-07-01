@@ -20,11 +20,12 @@ public class CrossServerThread extends Thread {
     
 	//tokeny dla komunikatów:
 	//TODO - w jakiejs wspolne klaise / pliku konfiguracyjnym
-	public final char T_OCCUPY = 0x11;
-	public final char T_SHELO = 0x01;
-	public final char T_OKOCC = 0x21;
-	public final char T_FLDOCC = 0x22;	
-	public final char T_NEWCAR = 0x23;	
+	public final static char T_OCCUPY = 0x11;
+	public final static char T_SHELO = 0x01;
+	public final static char T_OKOCC = 0x21;
+	public final static char T_FLDOCC = 0x22;	
+	public final static char T_NEWCAR = 0x23;
+	public final static char T_LIGHTCH = 0x12;
 	
 
     public CrossServerThread(CrossServer server,Socket socket,Crossing cross, JTextArea log) {
@@ -57,7 +58,13 @@ public class CrossServerThread extends Thread {
 
     @Override
     public void run() {
-        log.append("Stworzono nowy wątek dla klienta");
+        log.append("Stworzono nowy wątek dla klienta\n");
+        String hello = Character.toString(T_SHELO);
+        hello+=cross.getHello();
+        sendMessage(hello);
+        //wysylam tez informacje o nastepnej zmianie swiatla:
+        sendMessage(cross.getNextLightChangeMsg());
+        log.append("Wysłano hello: "+hello+"\n");        
         while (true) {
         	try {
 				String msg = in.readUTF();

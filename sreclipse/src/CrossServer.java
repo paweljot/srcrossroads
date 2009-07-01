@@ -3,7 +3,6 @@ import java.awt.event.WindowEvent;
 import java.io.IOException;
 import java.net.*;
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.Iterator;
 
 import javax.swing.JFrame;
@@ -18,7 +17,7 @@ import javax.swing.JTextArea;
 public class CrossServer extends JFrame {
 
     private final static int listenPort = 2222;
-    private JTextArea log;
+    public JTextArea log;
     private int clientCount;
     
     private ArrayList<CrossServerThread> clients;
