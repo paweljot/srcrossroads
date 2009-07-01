@@ -120,8 +120,8 @@ public class CrossClient extends JApplet {
 	class Roader implements java.awt.event.ActionListener {
 		public synchronized void actionPerformed(ActionEvent e) {
 			//System.out.println(((RoadButton)e.getSource()).getBackground());
-			if (myRoad==null) {
-				Road selectedRoad = ((RoadButton)e.getSource()).connectedRoad;
+			Road selectedRoad = ((RoadButton)e.getSource()).connectedRoad;
+			if (myRoad==null && selectedRoad.occupation==Road.Occupation.FREE) {
 				//poinformuj serwer:
 				String msg = Character.toString(T_OCCUPY);
 				msg+=Integer.toString(selectedRoad.roadNumber);
@@ -136,9 +136,6 @@ public class CrossClient extends JApplet {
 					((RoadButton)e.getSource()).setBackground(new Color(0,255,0));
 					myRoad = selectedRoad;
 				}
-				
-//				occupyRoad(selectedRoad.roadNumber);
-//				if (((RoadButton)e.getSource()).setBackground(new Color(0,255,0));				
 			}
 /*			else if (myRoad == ((RoadButton)e.getSource()).connectedRoad) {
 				myRoad=null;
@@ -149,7 +146,6 @@ public class CrossClient extends JApplet {
 	
 	}
 	class Connection extends Thread {
-		private JApplet aplet;
 		public void sendMessage(String msg) {
 			try {
 				output.writeUTF(msg);
@@ -174,6 +170,10 @@ public class CrossClient extends JApplet {
 						case T_FLDOCC:
 							occupyResponse = false;
 							buttonListener.notify();
+							break;
+						case T_OCCUPY:
+							int roadNumber = Integer.parseInt(msg.substring(1));
+							cross.roadOccupied(roadNumber);
 							break;
 						}
 					}
@@ -229,6 +229,14 @@ class CrossingK extends javax.swing.JPanel {
 		for (int i=0; i<4; i++) {
 			batons[i].addActionListener(listener);
 		}
+	}
+	/**
+	 *  SLuzy do oznaczenia drogi jako zjaeta -0 jesli dostaniemyu taka informacje od serwera.
+	 * @param number
+	 */
+	public void roadOccupied(int number) {
+		roads[number].occupation = Road.Occupation.OCCUPIED;
+		batons[number].setBackground(new Color(255,0,0));
 	}
 	
 	public void paint(Graphics g) {
@@ -315,6 +323,9 @@ class CrossingK extends javax.swing.JPanel {
 
 class RoadButton extends JButton {
 	public Road connectedRoad;
+	
+	public boolean occupied;
+	//TODO rysowanie zaleznie od tego argumentu (background)
 	
 	public RoadButton(Road road, String text) {
 		super(text);

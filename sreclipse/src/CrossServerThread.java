@@ -41,27 +41,34 @@ public class CrossServerThread extends Thread {
 
 
     }
+    
+    public void sendMessage(String msg) {
+		try {
+			out.writeUTF(msg);
+			out.flush(); 
+		} catch (IOException e) {
+			// TODO zamkniecie klienta dla serwera.
+		}   	
+    }
 
     @Override
     public void run() {
         log.append("Stworzono nowy wątek dla klienta");
-		try {
-			out.writeUTF(new String(Character.toString(T_SHELO)));
-			out.flush();
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-
         while (true) {
         	try {
 				String msg = in.readUTF();
 				char token = msg.charAt(0);
 				switch (token) {
 					case T_OCCUPY:
-						out.writeUTF(new String(Character.toString(T_OKOCC)));
-						out.flush();
-						log.append("Klient zajął drogę " +msg.substring(1)+"\n");						
+						int roadNumber = Integer.parseInt(msg.substring(1));
+						if (cross.occupyRoad(roadNumber, this)) {
+							sendMessage(Character.toString(T_OKOCC));
+							log.append("Klient zajął drogę " +msg.substring(1)+"\n");
+						}
+						else {
+							sendMessage(Character.toString(T_FLDOCC));
+							log.append("Klient nie może zająć drogi " +msg.substring(1)+"\n");
+						}
 				}
 			} catch (IOException e) {
 				// TODO odlaczenie klienta, zabicie watku.

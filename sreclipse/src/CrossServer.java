@@ -3,6 +3,8 @@ import java.awt.event.WindowEvent;
 import java.io.IOException;
 import java.net.*;
 import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.Iterator;
 
 import javax.swing.JFrame;
 import javax.swing.JScrollPane;
@@ -36,7 +38,7 @@ public class CrossServer extends JFrame {
         ServerSocket serverSocket = null;
         clientCount = 0;
         clients = new ArrayList<CrossServerThread>();
-        Crossing cross = new Crossing();
+        Crossing cross = new Crossing(this);
 
         //tworzenie socketa serwerowego
 
@@ -49,31 +51,23 @@ public class CrossServer extends JFrame {
 			clients.add(h);
 			h.start();
 		}
-
-        //czekanie na podłączenie się 4 skrzyżowań
-        /*while (clientCount < 4) {
-            new CrossServerThread(serverSocket.accept(), clientCount, cross).start();
-            clientCount++;
-        }
-        System.out.println("4 skrzyżowania podłączone!");
-
-
-
-        while (true) {
-
-            Thread.sleep(50);
-            System.out.println("STAN SKRZYŻOWANIA:");
-            for (int i = 0; i < 4; i++) {
-                int state = cross.getState(i);
-
-                System.out.println("Droga " + i + ": " + state);
-
-            }
-            System.out.println("------------------------");
-            System.out.println();
-            
-        }
-        */        
+  
+    }
+    
+    public void broadcast(String msg) {
+    	Iterator<CrossServerThread> i = clients.iterator();
+    	while (i.hasNext()) {
+    		i.next().sendMessage(msg);
+    	}
+    }
+    
+    public void broadcastWithout(CrossServerThread notThis, String msg) {
+    	Iterator<CrossServerThread> i = clients.iterator();
+    	while (i.hasNext()) {
+    		CrossServerThread watek = i.next();
+    		if (!watek.equals(notThis))
+    			watek.sendMessage(msg);    			
+    	}    	
     }
     
     public static void main(String args[]) throws IOException, InterruptedException {
