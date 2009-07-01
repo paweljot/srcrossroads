@@ -95,8 +95,10 @@ class Road extends java.awt.Rectangle {
 		}
 	}
 
-	public void newCar(int speed) {
-		cars.add(new Car(speed, startDirection));
+	public Car newCar(int speed) {
+		Car newcar = new Car(speed,startDirection);
+		cars.add(newcar);
+		return newcar;
 	}
 
 	public void moveCars() {
@@ -113,7 +115,7 @@ class Road extends java.awt.Rectangle {
 				tmp.speed = 0;
 				if (tmp.pos<0) tmp.pos=-80; else tmp.pos=80;
 			} else if (tmp.speed == 0 && this.light==LightColor.GREEN) {
-				tmp.speed = 1;
+				tmp.speed = tmp.startSpeed;
 			}
 
 

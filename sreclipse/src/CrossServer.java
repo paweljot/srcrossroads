@@ -47,7 +47,7 @@ public class CrossServer extends JFrame {
 		while (true) {
 			Socket client = serverSocket.accept();
 			log.append("Accepted from "+client.getInetAddress()+"\n");
-			CrossServerThread h = new CrossServerThread(client, cross, log);
+			CrossServerThread h = new CrossServerThread(this,client, cross, log);
 			clients.add(h);
 			h.start();
 		}

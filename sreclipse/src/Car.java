@@ -5,6 +5,7 @@ public class Car {
 	public final static int length = 10;
 	public int pos;
 	public int speed;
+	public int startSpeed;
 	public Color color;
 
 	public enum Direction {
@@ -16,6 +17,7 @@ public class Car {
 	public Car(int speed, Direction direction) {
 		pos = 0;
 		this.speed = speed;
+		this.startSpeed = speed;
 		this.direction = direction;
 		Random rand = new Random();
 		
@@ -25,6 +27,7 @@ public class Car {
 
 	public void move() {
 		
+		/*
 		if (speed != 0) {
 			Random rand = new Random();
 			double factor = 0.02;
@@ -35,7 +38,7 @@ public class Car {
 			}
 
 		}
-		
+		*/
 		if (pos < 100 || true) {
 
 			switch (direction) {

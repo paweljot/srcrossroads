@@ -16,6 +16,7 @@ public class CrossServerThread extends Thread {
     DataInputStream in = null;
     Crossing cross = null;
     JTextArea log;
+    CrossServer server = null;
     
 	//tokeny dla komunikatów:
 	//TODO - w jakiejs wspolne klaise / pliku konfiguracyjnym
@@ -23,12 +24,15 @@ public class CrossServerThread extends Thread {
 	public final char T_SHELO = 0x01;
 	public final char T_OKOCC = 0x21;
 	public final char T_FLDOCC = 0x22;	
+	public final char T_NEWCAR = 0x23;	
+	
 
-    public CrossServerThread(Socket socket,Crossing cross, JTextArea log) {
+    public CrossServerThread(CrossServer server,Socket socket,Crossing cross, JTextArea log) {
         super();
         this.socket = socket;
         this.log = log;
         this.cross = cross;
+        this.server = server;
 
         try {
             //strumień wejściowy - od serwera
@@ -69,6 +73,23 @@ public class CrossServerThread extends Thread {
 							sendMessage(Character.toString(T_FLDOCC));
 							log.append("Klient nie może zająć drogi " +msg.substring(1)+"\n");
 						}
+						break;
+					case T_NEWCAR:
+						//przyszedł nowy samochód na daną drogę
+						String tmpmsg[] = msg.split(",");
+
+						roadNumber = Integer.parseInt(tmpmsg[1]);
+						int carspeed = Integer.parseInt(tmpmsg[2]);
+						
+						log.append("Przyszedł nowy samochód na drogę nr "+roadNumber+"" +
+								" z prędkością " +carspeed+
+								"\n");
+						
+						server.broadcastWithout(this, msg);
+						
+						
+						break;
+
 				}
 			} catch (IOException e) {
 				// TODO odlaczenie klienta, zabicie watku.

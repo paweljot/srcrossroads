@@ -39,7 +39,8 @@ public class CrossClient extends JApplet {
 	public final char T_OCCUPY = 0x11;
 	public final char T_SHELO = 0x01;
 	public final char T_OKOCC = 0x21;
-	public final char T_FLDOCC = 0x22;
+	public final char T_FLDOCC = 0x22;	
+	public final char T_NEWCAR = 0x23;	
 	
 	//token dla okupacji drogi
 	
@@ -110,8 +111,18 @@ public class CrossClient extends JApplet {
 		public void actionPerformed(ActionEvent e) {
 			Random rand = new Random();
 			//myRoad = cross.roads[rand.nextInt(4)];
-			if (myRoad!=null)
-				myRoad.newCar(rand.nextInt(10) + 1);
+			if (myRoad!=null) {
+				Car newcar = myRoad.newCar(rand.nextInt(10) + 1);
+				
+				
+				//wysylanie wiadomości do serwera
+				String msg = Character.toString(T_NEWCAR);
+				msg+=","+Integer.toString(myRoad.roadNumber);
+				msg+=","+Integer.toString(newcar.startSpeed);
+				
+				
+				conn.sendMessage(msg);
+			}
 
 		}
 
@@ -175,6 +186,13 @@ public class CrossClient extends JApplet {
 							int roadNumber = Integer.parseInt(msg.substring(1));
 							cross.roadOccupied(roadNumber);
 							break;
+						case T_NEWCAR:
+							String tmpmsg[] = msg.split(",");
+
+							roadNumber = Integer.parseInt(tmpmsg[1]);
+							int carspeed = Integer.parseInt(tmpmsg[2]);
+							cross.roads[roadNumber].newCar(carspeed);
+							break;
 						}
 					}
 				}
@@ -223,6 +241,12 @@ class CrossingK extends javax.swing.JPanel {
 		
 		Mover mover = new Mover(this);
 		mover.start();
+		
+		//ustawienie timera, żeby zmieniał światła
+	    Timer timer = new Timer();
+	    lightControl lc = new lightControl(roads);
+	    timer.scheduleAtFixedRate(lc, 0, 7000);
+	   
 	}
 
 	public void addListeners(ActionListener listener) {
@@ -275,11 +299,8 @@ class CrossingK extends javax.swing.JPanel {
 
 		public void run() {
 			
-			//ustawienie timera, żeby zmieniał światła
-		    Timer timer = new Timer();
-		    lightControl lc = new lightControl(roads);
-		    timer.scheduleAtFixedRate(lc, 0, 7000);
-		       
+			
+		     
 			
 			while (true) {
 				roads[0].moveCars();
@@ -297,26 +318,28 @@ class CrossingK extends javax.swing.JPanel {
 		
 		
 		//klasa wywoływana przez timer do zmieniania świateł co określony czas
-		class lightControl extends TimerTask {
-			private Road roads[];
-			private int counter = 0;
-			lightControl(Road roads[]) {
-				super();
-				this.roads = roads;
-			}
-			public void run() {
+		
+	}
+	
+	class lightControl extends TimerTask {
+		private Road roads[];
+		private int counter = 0;
+		lightControl(Road roads[]) {
+			super();
+			this.roads = roads;
+		}
+		public void run() {
 
-				
-				for (int i = 0; i<4; i++) {
-					if (i==counter || i== (counter+2)%4) {
-						roads[i].light = Road.LightColor.GREEN;
-					} else {
-						roads[i].light = Road.LightColor.RED;
-					}
+			
+			for (int i = 0; i<4; i++) {
+				if (i==counter || i== (counter+2)%4) {
+					roads[i].light = Road.LightColor.GREEN;
+				} else {
+					roads[i].light = Road.LightColor.RED;
 				}
-				counter++;
-				counter = counter%4;
 			}
+			counter++;
+			counter = counter%4;
 		}
 	}
 }
