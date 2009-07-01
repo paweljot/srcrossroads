@@ -54,7 +54,7 @@ class Road extends java.awt.Rectangle {
 		
 	}
 	
-	public void drawSignalization(Graphics g) {
+	public void drawSignalization(Graphics g,int width,int height) {
 		if (this.light == LightColor.RED) 
 			g.setColor(new Color(255,0,0));
 		else if (this.light == LightColor.GREEN) {
@@ -63,7 +63,7 @@ class Road extends java.awt.Rectangle {
 			g.setColor(new Color(255,255,0));
 		}
 		
-		g.fillOval(lightPosX, lightPosY, 10, 10);
+		g.fillOval(width/2+lightPosX, height/2+lightPosY, 10, 10);
 		
 	}
 

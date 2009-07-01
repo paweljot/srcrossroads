@@ -197,13 +197,13 @@ class CrossingK extends javax.swing.JPanel {
 		roads = new Road[4];
 		
 		// droga z góry na dół
-		roads[0] = new Road(Road.Orientation.VERTICAL, Car.Direction.DOWN,70,50,0);
+		roads[0] = new Road(Road.Orientation.VERTICAL, Car.Direction.DOWN,-30,-30,0);
 		// droga z lewej na prawo
-		roads[1] = new Road(Road.Orientation.HORIZONTAL, Car.Direction.RIGHT,70,100,1);
+		roads[1] = new Road(Road.Orientation.HORIZONTAL, Car.Direction.RIGHT,-30,20,1);
 		// droga z dołu do góry
-		roads[2] = new Road(Road.Orientation.VERTICAL, Car.Direction.UP,120,100,2);
+		roads[2] = new Road(Road.Orientation.VERTICAL, Car.Direction.UP,20,20,2);
 		// droga z prawej na lewo
-		roads[3] = new Road(Road.Orientation.HORIZONTAL, Car.Direction.LEFT,120,50,3);
+		roads[3] = new Road(Road.Orientation.HORIZONTAL, Car.Direction.LEFT,20,-30,3);
 
 		//przyciski obslugi obsadzenia:
 		batons = new JButton[4];
@@ -257,10 +257,10 @@ class CrossingK extends javax.swing.JPanel {
 		roads[2].drawCars(g, width / 2+Car.length, height, height / 2);
 		roads[3].drawCars(g, width, height / 2, width / 2);
 		
-		roads[0].drawSignalization(g);
-		roads[1].drawSignalization(g);
-		roads[2].drawSignalization(g);
-		roads[3].drawSignalization(g);
+		roads[0].drawSignalization(g,this.getWidth(),this.getHeight());
+		roads[1].drawSignalization(g,this.getWidth(),this.getHeight());
+		roads[2].drawSignalization(g,this.getWidth(),this.getHeight());
+		roads[3].drawSignalization(g,this.getWidth(),this.getHeight());
 		
 		
 		this.paintComponents(g);
