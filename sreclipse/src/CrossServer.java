@@ -23,7 +23,7 @@ public class CrossServer extends JFrame {
     private ArrayList<CrossServerThread> clients;
     
     public CrossServer() throws IOException, InterruptedException {
-        initGui();
+    	initGui();
 		//poprawne wychodzenie:
 	      addWindowListener(new WindowAdapter()
 	      {

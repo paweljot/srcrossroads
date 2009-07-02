@@ -11,7 +11,6 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.Random;
 import java.util.Timer;
@@ -198,14 +197,14 @@ public class CrossClient extends JApplet {
 							break;
 						case T_LIGHTCH:
 							long when = Long.parseLong(msg.substring(1));
-							if (when < System.currentTimeMillis())
+/*							if (when < System.currentTimeMillis())
 								//jezeli sie spoznilem to wykonuje to natychmiast!
 								//TODO jakas informacja o duzym latency !
-								cross.lightChange();
-							else {
+								cross.lightChange();*/
+//							else {
 								Timer timer = new Timer();
 								timer.schedule(new lightChange(), new Date(when));
-							}
+	//						}
 							break;
 						}
 					}
