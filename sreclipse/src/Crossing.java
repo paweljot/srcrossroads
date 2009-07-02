@@ -76,9 +76,12 @@ public class Crossing {
     }
     
     public String getNextLightChangeMsg() {
-		String msg = Character.toString(CrossServerThread.T_LIGHTCH);
-		msg+=Long.toString(nextLightChange);
-		return msg;
+    	if (System.currentTimeMillis() > nextLightChange) {
+    		String msg = Character.toString(CrossServerThread.T_LIGHTCH);
+    		msg+=Long.toString(nextLightChange);
+    		return msg;
+    	}
+    	return null;
     }
     
 	/**

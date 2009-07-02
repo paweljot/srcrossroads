@@ -64,7 +64,9 @@ public class CrossServerThread extends Thread {
         hello+=cross.getHello();
         sendMessage(hello);
         //wysylam tez informacje o nastepnej zmianie swiatla:
-        sendMessage(cross.getNextLightChangeMsg());
+        String lc = cross.getNextLightChangeMsg();
+        if (lc != null)
+        	sendMessage(lc);
         log.append("Wysłano hello: "+hello+"\n");        
         while (!stop) {
         	try {
